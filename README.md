@@ -5,8 +5,8 @@
 [![XGBoost](https://img.shields.io/badge/XGBoost-EB5424.svg)](https://xgboost.readthedocs.io/)
 [![Status](https://img.shields.io/badge/Project_Status-Phases_1--3_Complete-brightgreen.svg)]()
 
-> **Academic Project:** CSD 302 — Machine Learning I Capstone  
-> **Track:** Problem Statement 30 — *[Capstone / Integration] Data-Cleaning, Preprocessing Pipeline, Model Comparison & Ethical Evaluation*  
+> **Academic Project:** Machine Learning I Capstone  
+> **Track:** *[Capstone / Integration] Data-Cleaning, Preprocessing Pipeline, Model Comparison & Ethical Evaluation*  
 > **Target Problem:** Automated Water Potability Classification from Multi-Source Environmental Sensor Telemetry
 
 ---
