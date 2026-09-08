@@ -7,95 +7,66 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 # ==============================================================================
-# 1. PAGE SETUP & WATER POTABILITY THEME CONFIGURATION
+# 1. PAGE SETUP
 # ==============================================================================
 st.set_page_config(
-    page_title="AquaGuard AI | Municipal Water Potability & Early Warning",
+    page_title="AquaGuard ML | Water Potability Triage",
     page_icon="💧",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Hydrological Clean-Tech CSS Theme
+# High-contrast, clean card styling (explicit text and background colors)
 st.markdown("""
 <style>
-    /* Global Typography & Background Adjustments */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    
-    /* Top Hero Banner */
-    .hero-container {
-        background: linear-gradient(135deg, #0A2540 0%, #0F3B5F 50%, #0284C7 100%);
-        border-radius: 16px;
-        padding: 28px 32px;
-        color: white;
-        margin-bottom: 24px;
-        box-shadow: 0 10px 30px rgba(2, 132, 199, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .hero-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin: 0;
-        letter-spacing: -0.5px;
-        background: linear-gradient(90deg, #FFFFFF, #67E8F9);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    .hero-subtitle {
-        font-size: 1.05rem;
-        color: #BAE6FD;
-        margin-top: 6px;
-        font-weight: 400;
-    }
-    
-    /* Triage Decision Cards */
-    .card-safe {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.16) 100%);
-        border: 1.5px solid #10B981;
-        border-radius: 14px;
+    .safe-banner {
+        background-color: #ECFDF5 !important;
+        border: 2px solid #10B981 !important;
+        border-radius: 12px;
         padding: 20px 24px;
-        color: #065F46;
-        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.1);
+        color: #065F46 !important;
+        margin-bottom: 20px;
     }
-    
-    .card-danger {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.16) 100%);
-        border: 1.5px solid #EF4444;
-        border-radius: 14px;
+    .safe-banner h2 {
+        color: #065F46 !important;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+    .safe-banner p {
+        color: #047857 !important;
+        margin-bottom: 0;
+    }
+
+    .danger-banner {
+        background-color: #FEF2F2 !important;
+        border: 2px solid #EF4444 !important;
+        border-radius: 12px;
         padding: 20px 24px;
-        color: #991B1B;
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.1);
+        color: #991B1B !important;
+        margin-bottom: 20px;
     }
-    
-    .metric-chip {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .danger-banner h2 {
+        color: #991B1B !important;
+        margin-top: 0;
+        margin-bottom: 8px;
     }
-    .chip-safe { background: #D1FAE5; color: #065F46; border: 1px solid #10B981; }
-    .chip-danger { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
-    
-    /* Sidebar Polish */
-    section[data-testid="stSidebar"] {
+    .danger-banner p {
+        color: #B91C1C !important;
+        margin-bottom: 0;
+    }
+
+    .metric-container {
         background-color: #F8FAFC;
-        border-right: 1px solid #E2E8F0;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
     }
 </style>
 """, unsafe_allow_html=True)
 
 
 # ==============================================================================
-# 2. CACHED MODEL ARTIFACT LOADER
+# 2. CACHED MODEL LOADER
 # ==============================================================================
 @st.cache_resource
 def load_production_pipeline():
@@ -113,59 +84,54 @@ except Exception as e:
 
 
 # ==============================================================================
-# 3. WHO & EPA REGULATORY COMPLIANCE BENCHMARKS
+# 3. WHO / EPA REGULATORY SAFE BENCHMARKS
 # ==============================================================================
 REGULATORY_LIMITS = {
-    'ph': {'min': 6.5, 'max': 8.5, 'unit': 'pH', 'norm_max': 14.0, 'desc': 'Acid-Base Equilibrium'},
-    'Hardness': {'min': 150.0, 'max': 300.0, 'unit': 'mg/L', 'norm_max': 400.0, 'desc': 'Ca / Mg Mineral Content'},
-    'Solids': {'min': 0.0, 'max': 1000.0, 'unit': 'ppm', 'norm_max': 35000.0, 'desc': 'Total Dissolved Solids (TDS)'},
-    'Chloramines': {'min': 0.0, 'max': 4.0, 'unit': 'ppm', 'norm_max': 12.0, 'desc': 'Disinfection Residuals'},
-    'Sulfate': {'min': 0.0, 'max': 250.0, 'unit': 'mg/L', 'norm_max': 500.0, 'desc': 'Dissolved Sulfate Minerals'},
-    'Conductivity': {'min': 0.0, 'max': 400.0, 'unit': 'μS/cm', 'norm_max': 800.0, 'desc': 'Electrical Charge Mobility'},
-    'Organic_carbon': {'min': 0.0, 'max': 4.0, 'unit': 'ppm', 'norm_max': 25.0, 'desc': 'Total Organic Carbon (TOC)'},
-    'Trihalomethanes': {'min': 0.0, 'max': 80.0, 'unit': 'μg/L', 'norm_max': 130.0, 'desc': 'Chlorination Byproducts (THMs)'},
-    'Turbidity': {'min': 0.0, 'max': 5.0, 'unit': 'NTU', 'norm_max': 8.0, 'desc': 'Suspended Particulate Clarity'}
+    'ph': {'min': 6.5, 'max': 8.5, 'unit': 'pH', 'desc': 'Acid-Base Equilibrium'},
+    'Hardness': {'min': 150.0, 'max': 300.0, 'unit': 'mg/L', 'desc': 'Calcium & Magnesium Content'},
+    'Solids': {'min': 0.0, 'max': 1000.0, 'unit': 'ppm', 'desc': 'Total Dissolved Solids (TDS)'},
+    'Chloramines': {'min': 0.0, 'max': 4.0, 'unit': 'ppm', 'desc': 'Disinfection Residuals'},
+    'Sulfate': {'min': 0.0, 'max': 250.0, 'unit': 'mg/L', 'desc': 'Dissolved Sulfate Minerals'},
+    'Conductivity': {'min': 0.0, 'max': 400.0, 'unit': 'μS/cm', 'desc': 'Electrical Conductivity'},
+    'Organic_carbon': {'min': 0.0, 'max': 4.0, 'unit': 'ppm', 'desc': 'Total Organic Carbon (TOC)'},
+    'Trihalomethanes': {'min': 0.0, 'max': 80.0, 'unit': 'μg/L', 'desc': 'Chlorination Byproducts (THMs)'},
+    'Turbidity': {'min': 0.0, 'max': 5.0, 'unit': 'NTU', 'desc': 'Particulate Clarity'}
 }
 
 
 # ==============================================================================
-# 4. TOP HERO BANNER
+# 4. HEADER SECTION
 # ==============================================================================
-st.markdown("""
-<div class="hero-container">
-    <div class="hero-title">🌊 AquaGuard AI — Water Potability & Triage System</div>
-    <div class="hero-subtitle">
-        Production-Grade Environmental Telemetry Inference Engine &bull; Cost-Sensitive Public Health Decision Support
-    </div>
-</div>
-""", unsafe_allow_html=True)
+st.title("🌊 AquaGuard ML: Municipal Water Potability Triage")
+st.markdown("**Production Environmental Telemetry Engine** &bull; CSD 302 Capstone Project &bull; Developer: Arnav Jain")
+st.divider()
 
 
 # ==============================================================================
-# 5. SIDEBAR: TELEMETRY CONTROLS & POLICY SELECTION
+# 5. SIDEBAR CONTROLS
 # ==============================================================================
-st.sidebar.markdown("### ⚙️ Operational Triage Policy")
+st.sidebar.header("⚙️ Triage Policy")
 policy_choice = st.sidebar.radio(
-    "Select Operating Threshold:",
-    ["🛡️ Public Safety Policy (τ = 0.65)", "⚖️ Standard Policy (τ = 0.50)"],
-    help="Public Safety Policy imposes a 10x penalty on false potables, requiring 65% probability before clearing water for human consumption."
+    "Decision Policy:",
+    ["Public Health Safety (Threshold = 0.65)", "Standard Commercial (Threshold = 0.50)"],
+    help="Public safety policy requires 65% confidence before clearing water for human consumption, minimizing dangerous false potables."
 )
 policy_threshold = 0.65 if "0.65" in policy_choice else 0.50
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📍 Station Metadata")
+st.sidebar.divider()
+st.sidebar.header("📍 Station Catchment")
 station_type = st.sidebar.selectbox(
-    "Monitoring Station Catchment:",
+    "Monitoring Station Type:",
     ["Urban_Treatment", "Agricultural_Runoff", "Industrial_Catchment", "Reservoir_Lake", "River_Basin"]
 )
 data_source = st.sidebar.selectbox(
-    "Telemetry Provenance:",
+    "Data Stream Provenance:",
     ["Regional_Network_B", "Global_Survey_A"]
 )
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 🧪 Chemical Sensor Telemetry")
-ph_input = st.sidebar.slider("pH Level", 0.0, 14.0, 7.25, 0.05, help="WHO safe range: 6.5 - 8.5")
+st.sidebar.divider()
+st.sidebar.header("🧪 Sensor Measurements")
+ph_input = st.sidebar.slider("pH Level", 0.0, 14.0, 7.25, 0.05)
 hardness_input = st.sidebar.slider("Hardness (mg/L)", 50.0, 400.0, 205.0, 1.0)
 solids_input = st.sidebar.slider("Total Dissolved Solids (ppm)", 100.0, 50000.0, 18500.0, 250.0)
 chloramines_input = st.sidebar.slider("Chloramines (ppm)", 0.0, 15.0, 7.1, 0.1)
@@ -192,12 +158,12 @@ current_sample_df = pd.DataFrame([{
 
 
 # ==============================================================================
-# 6. MAIN APPLICATION TABS
+# 6. APPLICATION TABS
 # ==============================================================================
 tab_single, tab_batch, tab_analytics = st.tabs([
     "🔬 Real-Time Sample Triage",
-    "📁 Batch Municipal Surveillance",
-    "📊 Model Architecture & XAI"
+    "📁 Batch Telemetry Analysis",
+    "📊 System Metrics & Architecture"
 ])
 
 
@@ -206,77 +172,69 @@ tab_single, tab_batch, tab_analytics = st.tabs([
 # ------------------------------------------------------------------------------
 with tab_single:
     if not model_loaded:
-        st.error(f"⚠️ Model pipeline failed to load: {load_error}")
+        st.error(f"Model pipeline failed to load: {load_error}")
     else:
         # Run inference
         probs = pipeline.predict_proba(current_sample_df)[0]
         prob_potable = probs[1]
         is_potable = prob_potable >= policy_threshold
 
-        # --- ROW 1: TRIAGE BANNER & KEY METRICS ---
-        col_banner, col_metric1, col_metric2 = st.columns([2, 1, 1])
+        # --- ROW 1: STATUS BANNER & METRICS ---
+        col_banner, col_m1, col_m2 = st.columns([2, 1, 1])
 
         with col_banner:
             if is_potable:
-                st.markdown(f"""
-                <div class="card-safe">
-                    <span class="metric-chip chip-safe">✓ Approved for Distribution</span>
-                    <h2 style="margin: 8px 0 4px 0; color: #065F46;">SAFE / POTABLE DRINKING WATER</h2>
-                    <p style="margin: 0; font-size: 0.95rem;">
-                        Water parameters meet health thresholds under the <b>{policy_choice}</b>.
-                    </p>
+                st.markdown("""
+                <div class="safe-banner">
+                    <h2>✅ POTABLE / SAFE DRINKING WATER</h2>
+                    <p>Water parameters conform to safety thresholds under the selected operating policy.</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
-                st.markdown(f"""
-                <div class="card-danger">
-                    <span class="metric-chip chip-danger">⚠ Contamination Alert</span>
-                    <h2 style="margin: 8px 0 4px 0; color: #991B1B;">HAZARDOUS / NON-POTABLE ALERT</h2>
-                    <p style="margin: 0; font-size: 0.95rem;">
-                        Sample poses waterborne illness risks. Do not route to public municipal mains.
-                    </p>
+                st.markdown("""
+                <div class="danger-banner">
+                    <h2>⚠️ HAZARDOUS / CONTAMINATION ALERT</h2>
+                    <p>Sample exceeds safe risk thresholds. Do not release into municipal drinking supply.</p>
                 </div>
                 """, unsafe_allow_html=True)
 
-        with col_metric1:
+        with col_m1:
             st.metric(
                 label="Potability Probability",
                 value=f"{prob_potable*100:.1f}%",
-                delta=f"{(prob_potable - policy_threshold)*100:+.1f}% vs Policy τ"
+                delta=f"{(prob_potable - policy_threshold)*100:+.1f}% vs Policy Threshold"
             )
 
-        with col_metric2:
+        with col_m2:
             st.metric(
                 label="Operating Policy Threshold",
                 value=f"{policy_threshold*100:.0f}%",
                 help="Minimum confidence required to classify water as safe."
             )
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
         # --- ROW 2: INTERACTIVE PLOTLY VISUALIZATIONS ---
         col_gauge, col_radar = st.columns([1, 1.2])
 
         with col_gauge:
-            st.markdown("#### 🧭 Potability Confidence Gauge")
+            st.subheader("🧭 Potability Confidence Gauge")
             
-            # Interactive Plotly Gauge Chart
+            # Interactive Gauge
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=prob_potable * 100,
                 domain={'x': [0, 1], 'y': [0, 1]},
-                delta={'reference': policy_threshold * 100, 'increasing': {'color': "#10B981"}, 'decreasing': {'color': "#EF4444"}},
-                number={'suffix': "%", 'font': {'size': 38, 'color': "#0F172A"}},
+                delta={'reference': policy_threshold * 100, 'increasing': {'color': "#059669"}, 'decreasing': {'color': "#DC2626"}},
+                number={'suffix': "%", 'font': {'size': 36, 'color': "#0F172A"}},
                 gauge={
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#94A3B8"},
+                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#475569"},
                     'bar': {'color': "#0284C7", 'thickness': 0.28},
-                    'bgcolor': "white",
-                    'borderwidth': 2,
-                    'bordercolor': "#E2E8F0",
+                    'bgcolor': "#FFFFFF",
+                    'borderwidth': 1.5,
+                    'bordercolor': "#CBD5E1",
                     'steps': [
-                        {'range': [0, 50], 'color': 'rgba(239, 68, 68, 0.22)'},
-                        {'range': [50, policy_threshold * 100], 'color': 'rgba(245, 158, 11, 0.25)'},
-                        {'range': [policy_threshold * 100, 100], 'color': 'rgba(16, 185, 129, 0.25)'}
+                        {'range': [0, 50], 'color': '#FEE2E2'},
+                        {'range': [50, policy_threshold * 100], 'color': '#FEF3C7'},
+                        {'range': [policy_threshold * 100, 100], 'color': '#D1FAE5'}
                     ],
                     'threshold': {
                         'line': {'color': "#DC2626", 'width': 4},
@@ -287,17 +245,16 @@ with tab_single:
             ))
             fig_gauge.update_layout(
                 height=300,
-                margin=dict(l=20, r=20, t=30, b=10),
+                margin=dict(l=20, r=20, t=30, b=20),
                 paper_bgcolor='rgba(0,0,0,0)',
-                font={'family': 'Plus Jakarta Sans'}
+                font={'color': '#0F172A'}
             )
             st.plotly_chart(fig_gauge, use_container_width=True)
-            st.caption("Red needle indicates the active policy decision boundary.")
+            st.caption("Red needle indicates the active policy decision threshold.")
 
         with col_radar:
-            st.markdown("#### 🕸️ Chemical Fingerprint vs. WHO Envelope")
+            st.subheader("🕸️ Chemical Fingerprint vs. WHO Envelope")
             
-            # Normalize parameters to percentage of safe upper bound for radar display
             radar_categories = ['pH', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'TOC', 'THMs', 'Turbidity']
             param_keys = ['ph', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Organic_carbon', 'Trihalomethanes', 'Turbidity']
             
@@ -307,7 +264,6 @@ with tab_single:
             for key in param_keys:
                 val = current_sample_df[key].iloc[0]
                 safe_max = REGULATORY_LIMITS[key]['max']
-                # Ratio: 100% means right at WHO upper limit
                 sample_ratios.append(min((val / safe_max) * 100.0, 200.0))
             
             fig_radar = go.Figure()
@@ -317,42 +273,42 @@ with tab_single:
                 r=who_benchmark,
                 theta=radar_categories,
                 fill='toself',
-                name='WHO Safe Envelope (100% Cap)',
-                line_color='#10B981',
-                fillcolor='rgba(16, 185, 129, 0.15)'
+                name='WHO Safe Envelope (100% Limit)',
+                line_color='#059669',
+                fillcolor='rgba(16, 185, 129, 0.20)'
             ))
             
             # Current Sample Trace
-            sample_color = '#0284C7' if is_potable else '#EF4444'
-            sample_fill = 'rgba(2, 132, 199, 0.25)' if is_potable else 'rgba(239, 68, 68, 0.25)'
+            sample_line_color = '#0284C7' if is_potable else '#DC2626'
+            sample_fill_color = 'rgba(2, 132, 199, 0.25)' if is_potable else 'rgba(220, 38, 38, 0.25)'
             
             fig_radar.add_trace(go.Scatterpolar(
                 r=sample_ratios,
                 theta=radar_categories,
                 fill='toself',
                 name='Current Water Sample',
-                line_color=sample_color,
-                fillcolor=sample_fill
+                line_color=sample_line_color,
+                fillcolor=sample_fill_color
             ))
             
             fig_radar.update_layout(
                 polar=dict(
-                    radialaxis=dict(visible=True, range=[0, 180], ticksuffix="%")
+                    radialaxis=dict(visible=True, range=[0, 180], ticksuffix="%", color="#475569")
                 ),
                 height=300,
                 margin=dict(l=30, r=30, t=20, b=20),
                 paper_bgcolor='rgba(0,0,0,0)',
                 showlegend=True,
                 legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5),
-                font={'family': 'Plus Jakarta Sans'}
+                font={'color': '#0F172A'}
             )
             st.plotly_chart(fig_radar, use_container_width=True)
-            st.caption("Spikes breaching outside the green perimeter indicate chemical threshold violations.")
+            st.caption("Points breaching outside the green perimeter violate WHO safety limits.")
 
-        st.markdown("---")
+        st.divider()
 
-        # --- ROW 3: COMPREHENSIVE COMPLIANCE AUDIT TABLE ---
-        st.markdown("#### 📋 Detailed Physicochemical Regulatory Audit")
+        # --- ROW 3: COMPLIANCE AUDIT TABLE ---
+        st.subheader("📋 Physicochemical Regulatory Audit")
         
         audit_records = []
         for key, info in REGULATORY_LIMITS.items():
@@ -363,24 +319,23 @@ with tab_single:
             audit_records.append({
                 "Parameter": info['desc'],
                 "Sensor Measurement": f"{val:.2f} {info['unit']}",
-                "WHO / EPA Standard": f"{info['min']} - {info['max']} {info['unit']}",
-                "Compliance Verdict": status_str
+                "WHO / EPA Guideline": f"{info['min']} - {info['max']} {info['unit']}",
+                "Compliance Status": status_str
             })
             
-        audit_table = pd.DataFrame(audit_records)
-        st.dataframe(audit_table, use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(audit_records), use_container_width=True, hide_index=True)
 
 
 # ------------------------------------------------------------------------------
-# TAB 2: BATCH MUNICIPAL SURVEILLANCE
+# TAB 2: BATCH TELEMETRY INGESTION & SCORING
 # ------------------------------------------------------------------------------
 with tab_batch:
-    st.markdown("### 📁 Batch Telemetry Ingestion & Scoring Engine")
-    st.write("Upload municipal sensor streams (CSV format) to score hundreds of regional water bodies simultaneously.")
+    st.subheader("📁 Batch Ingestion Engine")
+    st.write("Upload municipal sensor telemetry CSV files to score hundreds of water sources simultaneously.")
     
-    uploaded_batch = st.file_uploader("Upload Telemetry Batch CSV", type=["csv"])
+    uploaded_batch = st.file_uploader("Upload CSV File", type=["csv"])
     
-    # Provide sample download button if no file is uploaded yet
+    # Template download
     sample_download_df = pd.DataFrame([
         {'ph': 7.1, 'Hardness': 210, 'Solids': 18000, 'Chloramines': 6.5, 'Sulfate': 320, 'Conductivity': 410, 'Organic_carbon': 11.2, 'Trihalomethanes': 62, 'Turbidity': 3.4, 'Data_Source': 'Regional_Network_B', 'Station_Type': 'Urban_Treatment'},
         {'ph': 4.3, 'Hardness': 120, 'Solids': 45000, 'Chloramines': 11.0, 'Sulfate': 480, 'Conductivity': 650, 'Organic_carbon': 23.0, 'Trihalomethanes': 110, 'Turbidity': 6.5, 'Data_Source': 'Regional_Network_B', 'Station_Type': 'Industrial_Catchment'},
@@ -388,109 +343,102 @@ with tab_batch:
     ])
     
     st.download_button(
-        "📄 Download Sample Batch Template (CSV)",
+        "📄 Download Batch CSV Template",
         sample_download_df.to_csv(index=False).encode('utf-8'),
-        "sample_water_telemetry_batch.csv",
+        "water_telemetry_batch_template.csv",
         "text/csv"
     )
     
     if uploaded_batch is not None:
-        batch_input_df = pd.read_csv(uploaded_batch)
-        st.success(f"✓ Successfully ingested {len(batch_input_df)} observations from file.")
+        batch_df = pd.read_csv(uploaded_batch)
+        st.success(f"✓ Loaded {len(batch_df)} samples from file.")
         
-        # Ensure metadata columns exist
-        if 'Data_Source' not in batch_input_df.columns:
-            batch_input_df['Data_Source'] = 'Regional_Network_B'
-        if 'Station_Type' not in batch_input_df.columns:
-            batch_input_df['Station_Type'] = 'Urban_Treatment'
+        if 'Data_Source' not in batch_df.columns:
+            batch_df['Data_Source'] = 'Regional_Network_B'
+        if 'Station_Type' not in batch_df.columns:
+            batch_df['Station_Type'] = 'Urban_Treatment'
             
-        if st.button("🚀 Execute Batch Triage Pipeline"):
-            with st.spinner("Executing inference across production pipeline..."):
-                batch_probabilities = pipeline.predict_proba(batch_input_df)[:, 1]
-                batch_input_df['Potability_Probability'] = batch_probabilities
-                batch_input_df['Triage_Decision'] = np.where(batch_probabilities >= policy_threshold, 'Potable / Safe', 'Toxic / Unsafe')
+        if st.button("🚀 Score Entire Batch"):
+            with st.spinner("Scoring batch through ML pipeline..."):
+                probs_batch = pipeline.predict_proba(batch_df)[:, 1]
+                batch_df['Potability_Probability'] = probs_batch
+                batch_df['Triage_Verdict'] = np.where(probs_batch >= policy_threshold, 'Potable / Safe', 'Toxic / Unsafe')
                 
-                safe_n = (batch_input_df['Triage_Decision'] == 'Potable / Safe').sum()
-                toxic_n = len(batch_input_df) - safe_n
+                safe_n = (batch_df['Triage_Verdict'] == 'Potable / Safe').sum()
+                toxic_n = len(batch_df) - safe_n
                 
-                # Metric Summary Chips
                 m1, m2, m3 = st.columns(3)
-                m1.metric("Total Batch Volume", f"{len(batch_input_df)} samples")
-                m2.metric("Safe Water Streams", f"{safe_n} ({safe_n/len(batch_input_df)*100:.1f}%)")
-                m3.metric("Contamination Flags", f"{toxic_n} ({toxic_n/len(batch_input_df)*100:.1f}%)")
+                m1.metric("Total Batch Volume", f"{len(batch_df)} samples")
+                m2.metric("Potable Sources", f"{safe_n} ({safe_n/len(batch_df)*100:.1f}%)")
+                m3.metric("Contaminated Sources", f"{toxic_n} ({toxic_n/len(batch_df)*100:.1f}%)")
                 
-                # Interactive Batch Charts
-                c_pie, c_scatter = st.columns([1, 1.5])
-                
-                with c_pie:
-                    fig_donut = px.pie(
+                c1, c2 = st.columns([1, 1.5])
+                with c1:
+                    fig_pie = px.pie(
                         values=[safe_n, toxic_n],
-                        names=['Safe / Potable', 'Toxic / Unsafe'],
-                        color=['Safe / Potable', 'Toxic / Unsafe'],
-                        color_discrete_map={'Safe / Potable': '#10B981', 'Toxic / Unsafe': '#EF4444'},
-                        hole=0.55,
-                        title="Cohort Safety Distribution"
+                        names=['Potable / Safe', 'Toxic / Unsafe'],
+                        color=['Potable / Safe', 'Toxic / Unsafe'],
+                        color_discrete_map={'Potable / Safe': '#10B981', 'Toxic / Unsafe': '#EF4444'},
+                        hole=0.50,
+                        title="Cohort Safety Ratio"
                     )
-                    fig_donut.update_layout(height=300, margin=dict(l=10, r=10, t=40, b=10))
-                    st.plotly_chart(fig_donut, use_container_width=True)
+                    fig_pie.update_layout(height=280, margin=dict(l=10, r=10, t=35, b=10))
+                    st.plotly_chart(fig_pie, use_container_width=True)
                     
-                with c_scatter:
-                    fig_scat = px.scatter(
-                        batch_input_df,
+                with c2:
+                    fig_sc = px.scatter(
+                        batch_df,
                         x='ph',
                         y='Sulfate',
-                        color='Triage_Decision',
+                        color='Triage_Verdict',
                         color_discrete_map={'Potable / Safe': '#10B981', 'Toxic / Unsafe': '#EF4444'},
                         hover_data=['Solids', 'Chloramines', 'Potability_Probability'],
-                        title="Batch Distribution: pH vs. Sulfate"
+                        title="Distribution: pH vs. Sulfate"
                     )
-                    fig_scat.update_layout(height=300, margin=dict(l=10, r=10, t=40, b=10))
-                    st.plotly_chart(fig_scat, use_container_width=True)
+                    fig_sc.update_layout(height=280, margin=dict(l=10, r=10, t=35, b=10))
+                    st.plotly_chart(fig_sc, use_container_width=True)
                 
-                st.dataframe(batch_input_df, use_container_width=True)
+                st.dataframe(batch_df, use_container_width=True)
                 
-                # Export Button
-                scored_csv = batch_input_df.to_csv(index=False).encode('utf-8')
                 st.download_button(
-                    "📥 Export Scored Telemetry CSV",
-                    scored_csv,
-                    "aquaguard_triaged_output.csv",
+                    "📥 Download Scored Results (CSV)",
+                    batch_df.to_csv(index=False).encode('utf-8'),
+                    "triaged_batch_output.csv",
                     "text/csv"
                 )
 
 
 # ------------------------------------------------------------------------------
-# TAB 3: SYSTEM ARCHITECTURE & EXPLAINABLE AI
+# TAB 3: SYSTEM METRICS & ARCHITECTURE
 # ------------------------------------------------------------------------------
 with tab_analytics:
-    st.markdown("### 🏗️ Production System Architecture")
+    st.subheader("🏗️ Pipeline Architecture & Validation")
     
-    col_arch1, col_arch2 = st.columns(2)
-    
-    with col_arch1:
+    col_a, col_b = st.columns(2)
+    with col_a:
         st.markdown("""
-        #### 📦 End-to-End Pipeline Composition
-        * **1. Ingestion Layer**: Multi-source harmonization ($7,776$ records) combining historical surveys and live sensor networks.
-        * **2. Cleaning & Imputation**: Outlier Winsorization via Tukey's IQR Fences and 5-Nearest Neighbors (`KNNImputer`) preserving multivariate KDE distributions.
-        * **3. Feature Engine**: Strict zero-leakage `ColumnTransformer` (StandardScaler on continuous chemistry + OneHotEncoder on metadata).
-        * **4. Model Architecture**: Tuned Random Forest Classifier ($400$ estimators, `min_samples_leaf=4`, `class_weight='balanced_subsample'`).
+        **Pipeline Design**:
+        * **Ingestion**: Multi-source data pipeline ($7,776$ records).
+        * **Cleaning**: Tukey's IQR fences with non-negative Winsorization clipping.
+        * **Imputation**: 5-Nearest Neighbors (`KNNImputer`) preserving multivariate KDE distributions.
+        * **Preprocessing**: Strict `ColumnTransformer` (StandardScaler on 9 numeric + OneHotEncoder on metadata).
+        * **Model**: Tuned Random Forest ($400$ estimators, `min_samples_leaf=4`, `class_weight='balanced_subsample'`).
         """)
-        
-    with col_arch2:
+    with col_b:
         st.markdown("""
-        #### ⚖️ Asymmetric Cost-Sensitive Optimization
-        * **The Flaw of Accuracy**: Standard $0.50$ thresholds treat a catastrophic poisoning equally with a $15 laboratory re-test.
-        * **Cost Matrix**: Penalizes False Negatives (Type II) by $10\times$ relative to False Positives (Type I).
-        * **Optimal Operating Point**: $\tau^* = 0.65$ eliminates over $60\%$ of hazardous false-potable events on held-out test data.
+        **Asymmetric Cost Matrix**:
+        * **Public Health Priority**: Cost of False Negative (distributing contaminated water) is $10\times$ higher than a secondary lab re-test.
+        * **Optimal Operating Point**: $\tau^* = 0.65$ eliminates $>60%$ of dangerous false-potable poisonings.
+        * **Held-Out Test Score**: ROC-AUC **0.779** on $1,556$ unseen samples (zero overfitting).
         """)
 
-    st.markdown("---")
-    st.markdown("#### 🏆 Cross-Validation Benchmark Comparison")
+    st.divider()
+    st.subheader("Cross-Validation Leaderboard")
     
-    benchmark_data = pd.DataFrame([
-        {'Algorithm': 'Logistic Regression (Linear Baseline)', '5-Fold CV ROC-AUC': '0.618', 'Macro F1': '0.562', 'Architectural Limitation': 'Linear hyperplane cannot isolate bounded chemical ranges (e.g. 6.5 <= pH <= 8.5)'},
-        {'Algorithm': 'XGBoost Classifier', '5-Fold CV ROC-AUC': '0.745', 'Macro F1': '0.675', 'Architectural Limitation': 'Gradient boosting slightly sensitive to local sensor noise'},
-        {'Algorithm': 'Baseline Random Forest', '5-Fold CV ROC-AUC': '0.772', 'Macro F1': '0.696', 'Architectural Limitation': 'Un-regularized leaf depths allowed slight variance'},
-        {'Algorithm': 'Tuned Random Forest (Champion) 🏆', '5-Fold CV ROC-AUC': '0.779', 'Macro F1': '0.702', 'Architectural Limitation': 'Optimal bagging ensemble regularized against noise'}
+    bench_table = pd.DataFrame([
+        {'Algorithm': 'Logistic Regression (Linear Baseline)', '5-Fold CV ROC-AUC': '0.618', 'Macro F1': '0.562', 'Limitation': 'Linear boundary cannot separate bounded safe intervals (6.5 <= pH <= 8.5)'},
+        {'Algorithm': 'XGBoost Classifier', '5-Fold CV ROC-AUC': '0.745', 'Macro F1': '0.675', 'Limitation': 'Boosting slightly sensitive to noisy field telemetry'},
+        {'Algorithm': 'Baseline Random Forest', '5-Fold CV ROC-AUC': '0.772', 'Macro F1': '0.696', 'Limitation': 'Unconstrained leaf depth allowed minor variance'},
+        {'Algorithm': 'Tuned Champion Random Forest 🏆', '5-Fold CV ROC-AUC': '0.779', 'Macro F1': '0.702', 'Limitation': 'Production Champion: 400 trees with leaf regularization'}
     ])
-    st.dataframe(benchmark_data, use_container_width=True, hide_index=True)
+    st.dataframe(bench_table, use_container_width=True, hide_index=True)
