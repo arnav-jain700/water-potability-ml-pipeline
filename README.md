@@ -3,6 +3,8 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E.svg?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![XGBoost](https://img.shields.io/badge/XGBoost-EB5424.svg)](https://xgboost.readthedocs.io/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?logo=Streamlit&logoColor=white)](https://streamlit.io/)
+[![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?logo=Plotly&logoColor=white)](https://plotly.com/)
 [![CI/CD Pipeline](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions)
 [![Status](https://img.shields.io/badge/Project_Status-Phases_1--6_Complete-brightgreen.svg)]()
 
@@ -174,6 +176,12 @@ To simulate realistic municipal surveillance, the system combines **7,776 observ
 ```
 water-potability-ml-pipeline/
 │
+├── .github/workflows/
+│   └── ci.yml                         # Automated GitHub Actions CI/CD test workflow
+│
+├── .streamlit/
+│   └── config.toml                    # High-contrast UI theme & server configuration
+│
 ├── dataset/
 │   ├── water_potability.csv           # Original Source A benchmark survey (3,276 rows)
 │   ├── master_water_potability.csv    # Merged master dataset (7,776 rows × 12 cols)
@@ -187,9 +195,6 @@ water-potability-ml-pipeline/
 │
 ├── files/
 │   └── water_potability_capstone.ipynb# Fully documented, interactive Jupyter Notebook
-│
-├── .github/workflows/
-│   └── ci.yml                         # Automated GitHub Actions CI/CD test workflow
 │
 ├── app.py                             # Interactive Streamlit Web Application
 ├── .gitignore                         # Excludes course PDF, checkpoints, and cache
@@ -243,7 +248,19 @@ water-potability-ml-pipeline/
 
 ---
 
-## ⚖️ 9. Ethics, Fairness & Sociotechnical Considerations
+## 🌐 9. Interactive Web Application & Visual Analytics (Streamlit + Plotly)
+
+The project includes an interactive web dashboard (`app.py`) built with **Streamlit** and **Plotly** for real-time municipal triage:
+
+* **🧭 Plotly Potability Confidence Gauge (Speedometer)**: Curved semi-circular dial displaying potability confidence with delta indicators, color-coded hazard zones ($0-50\%$ Red, $50-65\%$ Amber, $65-100\%$ Emerald), and a dynamic threshold needle.
+* **🕸️ Chemical Fingerprint Radar / Spider Chart**: Multidimensional radar plot comparing all 9 chemical features against the **green WHO Safe Benchmark Envelope**; parameter breaches visibly pierce outside the safe boundary into the red alert zone.
+* **📋 Physicochemical Regulatory Audit**: Live tabular breakdown auditing each parameter against WHO/EPA guidelines (`min`, `max`, `unit`, and compliance verdict).
+* **📁 Batch Telemetry Ingestion & Scoring**: Drag-and-drop CSV upload for multi-sample scoring with cohort donut charts, 2D scatter plots (pH vs. Sulfate), and one-click scored CSV export.
+* **🎨 High-Contrast Theming (`.streamlit/config.toml`)**: Clean-tech theme with deep slate text (`#0F172A`) and explicit background contrast to ensure readability across all browsers.
+
+---
+
+## ⚖️ 10. Ethics, Fairness & Sociotechnical Considerations
 
 * **Environmental Justice & Infrastructure Bias:** Aging municipal infrastructure disproportionately affects lower-income and marginalized communities (e.g., Flint, Michigan crisis). Our dataset tracks station types to audit for disparate impact across urban vs. rural catchments.
 * **Sensor Quality Drift:** Industrial runoff monitoring stations often experience rapid sensor degradation, risking elevated false-negative rates if not regularly calibrated.
@@ -251,7 +268,7 @@ water-potability-ml-pipeline/
 
 ---
 
-## 🎓 10. Viva Defense Master Q&A (Top 5 Questions & Answers)
+## 🎓 11. Viva Defense Master Q&A (Top 5 Questions & Answers)
 
 1. **Q: Why did you use Tukey's IQR method instead of standard Z-scores for outlier detection?**  
    *A:* Z-score outlier detection assumes a symmetric, Gaussian distribution ($\mu \pm 3\sigma$). In our dataset, `Solids` exhibited heavy positive skewness ($+1.390$), which distorts the sample mean and standard deviation. Tukey's IQR fences rely on rank-ordered percentiles ($Q_1, Q_3$) which are inherently robust to extreme values.
