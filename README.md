@@ -179,9 +179,19 @@ water-potability-ml-pipeline/
 │   ├── master_water_potability.csv    # Merged master dataset (7,776 rows × 12 cols)
 │   └── cleaned_water_potability.csv   # Post-IQR capped & KNN-imputed dataset
 │
+├── models/
+│   └── water_potability_pipeline.joblib# Serialized atomic production pipeline
+│
+├── tests/
+│   └── test_pipeline.py               # Automated pytest suite (bounds, data, threshold)
+│
 ├── files/
 │   └── water_potability_capstone.ipynb# Fully documented, interactive Jupyter Notebook
 │
+├── .github/workflows/
+│   └── ci.yml                         # Automated GitHub Actions CI/CD test workflow
+│
+├── app.py                             # Interactive Streamlit Web Application
 ├── .gitignore                         # Excludes course PDF, checkpoints, and cache
 ├── README.md                          # Comprehensive project documentation & report
 └── requirements.txt                   # Reproducible Python dependencies
@@ -216,7 +226,17 @@ water-potability-ml-pipeline/
    pip install -r requirements.txt
    ```
 
-4. **Launch the Jupyter Notebook:**
+4. **Launch the Interactive Streamlit Web Dashboard:**
+   ```bash
+   streamlit run app.py
+   ```
+
+5. **Run Automated Unit Tests (pytest):**
+   ```bash
+   pytest -v tests/
+   ```
+
+6. **Launch the Jupyter Notebook:**
    ```bash
    jupyter notebook files/water_potability_capstone.ipynb
    ```
