@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
@@ -16,50 +16,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# High-contrast, clean card styling (explicit text and background colors)
+# Custom High-Contrast Dark-Tech Theme CSS
 st.markdown("""
 <style>
+    /* Safe Banner */
     .safe-banner {
-        background-color: #ECFDF5 !important;
-        border: 2px solid #10B981 !important;
+        background-color: rgba(16, 185, 129, 0.15) !important;
+        border: 1.5px solid #10B981 !important;
         border-radius: 12px;
         padding: 20px 24px;
-        color: #065F46 !important;
+        color: #34D399 !important;
         margin-bottom: 20px;
     }
     .safe-banner h2 {
-        color: #065F46 !important;
+        color: #34D399 !important;
         margin-top: 0;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     .safe-banner p {
-        color: #047857 !important;
+        color: #A7F3D0 !important;
         margin-bottom: 0;
     }
 
+    /* Danger Banner */
     .danger-banner {
-        background-color: #FEF2F2 !important;
-        border: 2px solid #EF4444 !important;
+        background-color: rgba(239, 68, 68, 0.15) !important;
+        border: 1.5px solid #EF4444 !important;
         border-radius: 12px;
         padding: 20px 24px;
-        color: #991B1B !important;
+        color: #F87171 !important;
         margin-bottom: 20px;
     }
     .danger-banner h2 {
-        color: #991B1B !important;
+        color: #F87171 !important;
         margin-top: 0;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
     }
     .danger-banner p {
-        color: #B91C1C !important;
+        color: #FECACA !important;
         margin-bottom: 0;
-    }
-
-    .metric-container {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -168,7 +163,7 @@ tab_single, tab_batch, tab_analytics = st.tabs([
 
 
 # ------------------------------------------------------------------------------
-# TAB 1: REAL-TIME SAMPLE TRIAGE & INTERACTIVE CHARTS
+# TAB 1: REAL-TIME SAMPLE TRIAGE & HIGH-CONTRAST INTERACTIVE CHARTS
 # ------------------------------------------------------------------------------
 with tab_single:
     if not model_loaded:
@@ -202,7 +197,7 @@ with tab_single:
             st.metric(
                 label="Potability Probability",
                 value=f"{prob_potable*100:.1f}%",
-                delta=f"{(prob_potable - policy_threshold)*100:+.1f}% vs Policy Threshold"
+                delta=f"{(prob_potable - policy_threshold)*100:+.1f}% vs Threshold"
             )
 
         with col_m2:
@@ -212,42 +207,56 @@ with tab_single:
                 help="Minimum confidence required to classify water as safe."
             )
 
-        # --- ROW 2: INTERACTIVE PLOTLY VISUALIZATIONS ---
+        # --- ROW 2: HIGH-CONTRAST PLOTLY CHARTS ---
         col_gauge, col_radar = st.columns([1, 1.2])
 
         with col_gauge:
             st.subheader("🧭 Potability Confidence Gauge")
             
-            # Interactive Gauge
+            # Interactive High-Contrast Gauge
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number+delta",
                 value=prob_potable * 100,
                 domain={'x': [0, 1], 'y': [0, 1]},
-                delta={'reference': policy_threshold * 100, 'increasing': {'color': "#059669"}, 'decreasing': {'color': "#DC2626"}},
-                number={'suffix': "%", 'font': {'size': 36, 'color': "#0F172A"}},
+                delta={
+                    'reference': policy_threshold * 100,
+                    'increasing': {'color': "#10B981"},
+                    'decreasing': {'color': "#EF4444"},
+                    'font': {'size': 20}
+                },
+                number={
+                    'suffix': "%",
+                    'font': {'size': 44, 'color': "#FFFFFF", 'family': "sans-serif"}
+                },
                 gauge={
-                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#475569"},
-                    'bar': {'color': "#0284C7", 'thickness': 0.28},
-                    'bgcolor': "#FFFFFF",
+                    'axis': {
+                        'range': [0, 100],
+                        'tickwidth': 2,
+                        'tickcolor': "#FFFFFF",
+                        'tickfont': {'color': '#FFFFFF', 'size': 14, 'family': "sans-serif"}
+                    },
+                    'bar': {'color': "#00D4B2", 'thickness': 0.32},
+                    'bgcolor': "rgba(255, 255, 255, 0.05)",
                     'borderwidth': 1.5,
-                    'bordercolor': "#CBD5E1",
+                    'bordercolor': "#334155",
                     'steps': [
-                        {'range': [0, 50], 'color': '#FEE2E2'},
-                        {'range': [50, policy_threshold * 100], 'color': '#FEF3C7'},
-                        {'range': [policy_threshold * 100, 100], 'color': '#D1FAE5'}
+                        {'range': [0, 50], 'color': 'rgba(239, 68, 68, 0.35)'},
+                        {'range': [50, policy_threshold * 100], 'color': 'rgba(245, 158, 11, 0.35)'},
+                        {'range': [policy_threshold * 100, 100], 'color': 'rgba(16, 185, 129, 0.35)'}
                     ],
                     'threshold': {
-                        'line': {'color': "#DC2626", 'width': 4},
-                        'thickness': 0.8,
+                        'line': {'color': "#EF4444", 'width': 4},
+                        'thickness': 0.85,
                         'value': policy_threshold * 100
                     }
                 }
             ))
             fig_gauge.update_layout(
-                height=300,
-                margin=dict(l=20, r=20, t=30, b=20),
+                height=320,
+                margin=dict(l=25, r=25, t=35, b=20),
                 paper_bgcolor='rgba(0,0,0,0)',
-                font={'color': '#0F172A'}
+                plot_bgcolor='rgba(0,0,0,0)',
+                font={'color': '#FFFFFF', 'family': 'sans-serif'}
             )
             st.plotly_chart(fig_gauge, use_container_width=True)
             st.caption("Red needle indicates the active policy decision threshold.")
@@ -273,34 +282,53 @@ with tab_single:
                 r=who_benchmark,
                 theta=radar_categories,
                 fill='toself',
-                name='WHO Safe Envelope (100% Limit)',
-                line_color='#059669',
-                fillcolor='rgba(16, 185, 129, 0.20)'
+                name='WHO Safe Limit (100%)',
+                line=dict(color='#10B981', width=2.5),
+                fillcolor='rgba(16, 185, 129, 0.22)'
             ))
             
-            # Current Sample Trace
-            sample_line_color = '#0284C7' if is_potable else '#DC2626'
-            sample_fill_color = 'rgba(2, 132, 199, 0.25)' if is_potable else 'rgba(220, 38, 38, 0.25)'
+            # Current Water Sample Trace
+            sample_line_color = '#00D4B2' if is_potable else '#EF4444'
+            sample_fill_color = 'rgba(0, 212, 178, 0.28)' if is_potable else 'rgba(239, 68, 68, 0.28)'
             
             fig_radar.add_trace(go.Scatterpolar(
                 r=sample_ratios,
                 theta=radar_categories,
                 fill='toself',
                 name='Current Water Sample',
-                line_color=sample_line_color,
+                line=dict(color=sample_line_color, width=2.5),
                 fillcolor=sample_fill_color
             ))
             
             fig_radar.update_layout(
                 polar=dict(
-                    radialaxis=dict(visible=True, range=[0, 180], ticksuffix="%", color="#475569")
+                    radialaxis=dict(
+                        visible=True,
+                        range=[0, 180],
+                        ticksuffix="%",
+                        color="#CBD5E1",
+                        tickfont={'color': '#CBD5E1', 'size': 11}
+                    ),
+                    angularaxis=dict(
+                        tickfont={'color': '#FFFFFF', 'size': 13, 'family': 'sans-serif'},
+                        linecolor='#475569'
+                    ),
+                    bgcolor='rgba(255, 255, 255, 0.02)'
                 ),
-                height=300,
-                margin=dict(l=30, r=30, t=20, b=20),
+                height=320,
+                margin=dict(l=35, r=35, t=25, b=25),
                 paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
                 showlegend=True,
-                legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5),
-                font={'color': '#0F172A'}
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=-0.25,
+                    xanchor="center",
+                    x=0.5,
+                    font={'color': '#FFFFFF', 'size': 12}
+                ),
+                font={'color': '#FFFFFF', 'family': 'sans-serif'}
             )
             st.plotly_chart(fig_radar, use_container_width=True)
             st.caption("Points breaching outside the green perimeter violate WHO safety limits.")
@@ -380,9 +408,15 @@ with tab_batch:
                         color=['Potable / Safe', 'Toxic / Unsafe'],
                         color_discrete_map={'Potable / Safe': '#10B981', 'Toxic / Unsafe': '#EF4444'},
                         hole=0.50,
-                        title="Cohort Safety Ratio"
+                        title="Cohort Safety Ratio",
+                        template="plotly_dark"
                     )
-                    fig_pie.update_layout(height=280, margin=dict(l=10, r=10, t=35, b=10))
+                    fig_pie.update_layout(
+                        height=280,
+                        margin=dict(l=10, r=10, t=35, b=10),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font={'color': '#FFFFFF'}
+                    )
                     st.plotly_chart(fig_pie, use_container_width=True)
                     
                 with c2:
@@ -393,9 +427,15 @@ with tab_batch:
                         color='Triage_Verdict',
                         color_discrete_map={'Potable / Safe': '#10B981', 'Toxic / Unsafe': '#EF4444'},
                         hover_data=['Solids', 'Chloramines', 'Potability_Probability'],
-                        title="Distribution: pH vs. Sulfate"
+                        title="Distribution: pH vs. Sulfate",
+                        template="plotly_dark"
                     )
-                    fig_sc.update_layout(height=280, margin=dict(l=10, r=10, t=35, b=10))
+                    fig_sc.update_layout(
+                        height=280,
+                        margin=dict(l=10, r=10, t=35, b=10),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        font={'color': '#FFFFFF'}
+                    )
                     st.plotly_chart(fig_sc, use_container_width=True)
                 
                 st.dataframe(batch_df, use_container_width=True)
