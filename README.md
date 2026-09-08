@@ -6,12 +6,14 @@
 [![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?logo=Streamlit&logoColor=white)](https://streamlit.io/)
 [![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?logo=Plotly&logoColor=white)](https://plotly.com/)
 [![CI/CD Pipeline](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions)
+[![Live Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aquaguard-water-potability.streamlit.app/)
 [![Status](https://img.shields.io/badge/Project_Status-Phases_1--6_Complete-brightgreen.svg)]()
 
 > **Academic Project:** CSD 302 — Machine Learning I Capstone Project  
 > **Course Track:** Problem Statement 30 — *[Capstone / Integration] Data-Cleaning, Preprocessing Pipeline, Model Comparison & Ethical Evaluation*  
 > **Domain:** Environmental Engineering, Public Health & Sensor Telemetry  
-> **Author:** Arnav Jain ([@arnav-jain700](https://github.com/arnav-jain700))
+> **Author:** Arnav Jain ([@arnav-jain700](https://github.com/arnav-jain700))  
+> 🌐 **Live Web Application:** [aquaguard-water-potability.streamlit.app](https://aquaguard-water-potability.streamlit.app/)
 
 ---
 
@@ -249,6 +251,8 @@ water-potability-ml-pipeline/
 ---
 
 ## 🌐 9. Interactive Web Application & Visual Analytics (Streamlit + Plotly)
+
+> 🚀 **Live Production Deployment**: [aquaguard-water-potability.streamlit.app](https://aquaguard-water-potability.streamlit.app/)
 
 The project includes an interactive web dashboard (`app.py`) built with **Streamlit** and **Plotly** for real-time municipal triage:
 
