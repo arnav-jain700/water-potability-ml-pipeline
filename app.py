@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 
 # ==============================================================================
-# 1. PAGE SETUP
+# 1. PAGE SETUP & CONFIGURATION
 # ==============================================================================
 st.set_page_config(
     page_title="AquaGuard ML | Water Potability Triage",
@@ -26,17 +26,10 @@ st.markdown("""
         border-radius: 12px;
         padding: 20px 24px;
         color: #34D399 !important;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
-    .safe-banner h2 {
-        color: #34D399 !important;
-        margin-top: 0;
-        margin-bottom: 6px;
-    }
-    .safe-banner p {
-        color: #A7F3D0 !important;
-        margin-bottom: 0;
-    }
+    .safe-banner h2 { color: #34D399 !important; margin-top: 0; margin-bottom: 6px; }
+    .safe-banner p { color: #A7F3D0 !important; margin-bottom: 0; }
 
     /* Danger Banner */
     .danger-banner {
@@ -45,16 +38,28 @@ st.markdown("""
         border-radius: 12px;
         padding: 20px 24px;
         color: #F87171 !important;
-        margin-bottom: 20px;
+        margin-bottom: 16px;
     }
-    .danger-banner h2 {
-        color: #F87171 !important;
-        margin-top: 0;
-        margin-bottom: 6px;
+    .danger-banner h2 { color: #F87171 !important; margin-top: 0; margin-bottom: 6px; }
+    .danger-banner p { color: #FECACA !important; margin-bottom: 0; }
+
+    /* Culprit Pill Badges */
+    .culprit-card {
+        background-color: rgba(239, 68, 68, 0.10);
+        border-left: 4px solid #EF4444;
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        color: #FCA5A5;
+        font-size: 0.92rem;
     }
-    .danger-banner p {
-        color: #FECACA !important;
-        margin-bottom: 0;
+    .safe-profile-card {
+        background-color: rgba(16, 185, 129, 0.10);
+        border-left: 4px solid #10B981;
+        padding: 10px 14px;
+        border-radius: 6px;
+        color: #86EFAC;
+        font-size: 0.92rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -79,7 +84,7 @@ except Exception as e:
 
 
 # ==============================================================================
-# 3. WHO / EPA REGULATORY SAFE BENCHMARKS
+# 3. WHO / EPA REGULATORY BENCHMARKS
 # ==============================================================================
 REGULATORY_LIMITS = {
     'ph': {'min': 6.5, 'max': 8.5, 'unit': 'pH', 'desc': 'Acid-Base Equilibrium'},
@@ -95,7 +100,42 @@ REGULATORY_LIMITS = {
 
 
 # ==============================================================================
-# 4. HEADER SECTION
+# 4. PRESET SCENARIO HANDLER
+# ==============================================================================
+PRESETS = {
+    "Pristine Tap (Safe)": {
+        'ph': 7.35, 'Hardness': 195.0, 'Solids': 16500.0, 'Chloramines': 6.8,
+        'Sulfate': 315.0, 'Conductivity': 390.0, 'Organic_carbon': 11.0,
+        'Trihalomethanes': 58.0, 'Turbidity': 3.1, 'Station_Type': 'Urban_Treatment'
+    },
+    "Industrial Spill (Hazardous)": {
+        'ph': 3.90, 'Hardness': 110.0, 'Solids': 46000.0, 'Chloramines': 12.5,
+        'Sulfate': 490.0, 'Conductivity': 720.0, 'Organic_carbon': 25.5,
+        'Trihalomethanes': 118.0, 'Turbidity': 6.8, 'Station_Type': 'Industrial_Catchment'
+    },
+    "Borderline Infiltration (Edge Case)": {
+        'ph': 6.30, 'Hardness': 145.0, 'Solids': 24000.0, 'Chloramines': 8.2,
+        'Sulfate': 365.0, 'Conductivity': 460.0, 'Organic_carbon': 16.5,
+        'Trihalomethanes': 78.0, 'Turbidity': 4.8, 'Station_Type': 'Agricultural_Runoff'
+    }
+}
+
+# Initialize session state for inputs if not present
+for param in ['ph', 'Hardness', 'Solids', 'Chloramines', 'Sulfate', 'Conductivity', 'Organic_carbon', 'Trihalomethanes', 'Turbidity']:
+    if param not in st.session_state:
+        st.session_state[param] = PRESETS["Pristine Tap (Safe)"][param]
+
+if 'Station_Type' not in st.session_state:
+    st.session_state['Station_Type'] = 'Urban_Treatment'
+
+def apply_preset(preset_name):
+    cfg = PRESETS[preset_name]
+    for key, val in cfg.items():
+        st.session_state[key] = val
+
+
+# ==============================================================================
+# 5. HEADER SECTION
 # ==============================================================================
 st.title("🌊 AquaGuard ML: Municipal Water Potability Triage")
 st.markdown("**Production Environmental Telemetry Engine** &bull; CSD 302 Capstone Project &bull; Developer: Arnav Jain")
@@ -103,8 +143,25 @@ st.divider()
 
 
 # ==============================================================================
-# 5. SIDEBAR CONTROLS
+# 6. SIDEBAR: PRESET BUTTONS & CONTROLS
 # ==============================================================================
+st.sidebar.markdown("### ⚡ Quick Scenario Presets")
+st.sidebar.caption("1-click demonstrations for viva and evaluations:")
+col_btn1, col_btn2 = st.sidebar.columns(2)
+with col_btn1:
+    if st.button("🏙️ Safe Tap", use_container_width=True, help="Load normal municipal tap water"):
+        apply_preset("Pristine Tap (Safe)")
+        st.rerun()
+with col_btn2:
+    if st.button("🏭 Toxic Spill", use_container_width=True, help="Load severe industrial contamination"):
+        apply_preset("Industrial Spill (Hazardous)")
+        st.rerun()
+
+if st.sidebar.button("🌾 Borderline Runoff", use_container_width=True, help="Load borderline agricultural infiltration"):
+    apply_preset("Borderline Infiltration (Edge Case)")
+    st.rerun()
+
+st.sidebar.markdown("---")
 st.sidebar.header("⚙️ Triage Policy")
 policy_choice = st.sidebar.radio(
     "Decision Policy:",
@@ -117,7 +174,8 @@ st.sidebar.divider()
 st.sidebar.header("📍 Station Catchment")
 station_type = st.sidebar.selectbox(
     "Monitoring Station Type:",
-    ["Urban_Treatment", "Agricultural_Runoff", "Industrial_Catchment", "Reservoir_Lake", "River_Basin"]
+    ["Urban_Treatment", "Agricultural_Runoff", "Industrial_Catchment", "Reservoir_Lake", "River_Basin"],
+    index=["Urban_Treatment", "Agricultural_Runoff", "Industrial_Catchment", "Reservoir_Lake", "River_Basin"].index(st.session_state['Station_Type'])
 )
 data_source = st.sidebar.selectbox(
     "Data Stream Provenance:",
@@ -126,15 +184,15 @@ data_source = st.sidebar.selectbox(
 
 st.sidebar.divider()
 st.sidebar.header("🧪 Sensor Measurements")
-ph_input = st.sidebar.slider("pH Level", 0.0, 14.0, 7.25, 0.05)
-hardness_input = st.sidebar.slider("Hardness (mg/L)", 50.0, 400.0, 205.0, 1.0)
-solids_input = st.sidebar.slider("Total Dissolved Solids (ppm)", 100.0, 50000.0, 18500.0, 250.0)
-chloramines_input = st.sidebar.slider("Chloramines (ppm)", 0.0, 15.0, 7.1, 0.1)
-sulfate_input = st.sidebar.slider("Sulfate Minerals (mg/L)", 100.0, 500.0, 333.0, 1.0)
-conductivity_input = st.sidebar.slider("Conductivity (μS/cm)", 100.0, 800.0, 420.0, 5.0)
-organic_carbon_input = st.sidebar.slider("Total Organic Carbon (ppm)", 0.0, 30.0, 13.5, 0.1)
-trihalomethanes_input = st.sidebar.slider("Trihalomethanes (μg/L)", 0.0, 140.0, 66.0, 1.0)
-turbidity_input = st.sidebar.slider("Turbidity (NTU)", 0.0, 8.0, 3.9, 0.1)
+ph_input = st.sidebar.slider("pH Level", 0.0, 14.0, float(st.session_state['ph']), 0.05)
+hardness_input = st.sidebar.slider("Hardness (mg/L)", 50.0, 400.0, float(st.session_state['Hardness']), 1.0)
+solids_input = st.sidebar.slider("Total Dissolved Solids (ppm)", 100.0, 50000.0, float(st.session_state['Solids']), 250.0)
+chloramines_input = st.sidebar.slider("Chloramines (ppm)", 0.0, 15.0, float(st.session_state['Chloramines']), 0.1)
+sulfate_input = st.sidebar.slider("Sulfate Minerals (mg/L)", 100.0, 500.0, float(st.session_state['Sulfate']), 1.0)
+conductivity_input = st.sidebar.slider("Conductivity (μS/cm)", 100.0, 800.0, float(st.session_state['Conductivity']), 5.0)
+organic_carbon_input = st.sidebar.slider("Total Organic Carbon (ppm)", 0.0, 30.0, float(st.session_state['Organic_carbon']), 0.1)
+trihalomethanes_input = st.sidebar.slider("Trihalomethanes (μg/L)", 0.0, 140.0, float(st.session_state['Trihalomethanes']), 1.0)
+turbidity_input = st.sidebar.slider("Turbidity (NTU)", 0.0, 8.0, float(st.session_state['Turbidity']), 0.1)
 
 # Assemble DataFrame
 current_sample_df = pd.DataFrame([{
@@ -153,7 +211,7 @@ current_sample_df = pd.DataFrame([{
 
 
 # ==============================================================================
-# 6. APPLICATION TABS
+# 7. APPLICATION TABS
 # ==============================================================================
 tab_single, tab_batch, tab_analytics = st.tabs([
     "🔬 Real-Time Sample Triage",
@@ -163,7 +221,7 @@ tab_single, tab_batch, tab_analytics = st.tabs([
 
 
 # ------------------------------------------------------------------------------
-# TAB 1: REAL-TIME SAMPLE TRIAGE & HIGH-CONTRAST INTERACTIVE CHARTS
+# TAB 1: REAL-TIME SAMPLE TRIAGE & CULPRIT DIAGNOSTICS
 # ------------------------------------------------------------------------------
 with tab_single:
     if not model_loaded:
@@ -206,6 +264,45 @@ with tab_single:
                 value=f"{policy_threshold*100:.0f}%",
                 help="Minimum confidence required to classify water as safe."
             )
+
+        # --- REAL-TIME CHEMICAL CULPRIT DIAGNOSTIC PANEL ---
+        violations = []
+        for param, info in REGULATORY_LIMITS.items():
+            val = current_sample_df[param].iloc[0]
+            if val < info['min']:
+                violations.append({
+                    'name': info['desc'],
+                    'reading': f"{val:.2f} {info['unit']}",
+                    'boundary': f"Below safe floor of {info['min']} {info['unit']}"
+                })
+            elif val > info['max']:
+                violations.append({
+                    'name': info['desc'],
+                    'reading': f"{val:.2f} {info['unit']}",
+                    'boundary': f"Exceeds safe ceiling of {info['max']} {info['unit']}"
+                })
+
+        if violations:
+            st.markdown(f"#### ⚠️ Primary Chemical Culprits Detected ({len(violations)} Violations)")
+            v_cols = st.columns(min(len(violations), 3))
+            for idx, v in enumerate(violations):
+                col_target = v_cols[idx % 3]
+                with col_target:
+                    st.markdown(f"""
+                    <div class="culprit-card">
+                        <b>🚨 {v['name']}</b><br>
+                        Current: <code>{v['reading']}</code><br>
+                        <small>{v['boundary']}</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="safe-profile-card">
+                <b>🟢 Optimal Physicochemical Profile:</b> All 9 parameters reside strictly within standard EPA / WHO regulatory boundaries.
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
 
         # --- ROW 2: HIGH-CONTRAST PLOTLY CHARTS ---
         col_gauge, col_radar = st.columns([1, 1.2])
@@ -259,7 +356,7 @@ with tab_single:
                 font={'color': '#FFFFFF', 'family': 'sans-serif'}
             )
             st.plotly_chart(fig_gauge, use_container_width=True)
-            st.caption("Red needle indicates the active policy decision threshold.")
+            st.caption("Red needle marks your active policy decision threshold.")
 
         with col_radar:
             st.subheader("🕸️ Chemical Fingerprint vs. WHO Envelope")
