@@ -677,16 +677,6 @@ with tab_single:
     70% {{ box-shadow: 0 0 0 8px transparent; }}
     100% {{ box-shadow: 0 0 0 0 transparent; }}
   }}
-  .react-tag {{
-    font-size: 0.68rem;
-    font-weight: 600;
-    color: #00E5BE;
-    font-family: 'JetBrains Mono', monospace;
-    background: rgba(0, 229, 190, 0.08);
-    padding: 3px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(0, 229, 190, 0.25);
-  }}
   .verdict-title {{
     font-size: 1.40rem;
     font-weight: 800;
@@ -792,8 +782,7 @@ with tab_single:
           e('div', {{ key: 'badge', className: 'status-badge' }}, [
             e('span', {{ key: 'dot', className: 'pulse-dot' }}),
             '{badge_text}'
-          ]),
-          e('span', {{ key: 'tag', className: 'react-tag' }}, '⚛️ ReactBits SpotlightCard')
+          ])
         ]),
         e('h2', {{ key: 'title', className: 'verdict-title' }}, '{title_text}'),
         e('p', {{
