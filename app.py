@@ -5,6 +5,7 @@ import joblib
 import os
 import plotly.graph_objects as go
 import plotly.express as px
+import streamlit.components.v1 as components
 
 # ==============================================================================
 # 1. PAGE SETUP & CONFIGURATION
@@ -347,14 +348,20 @@ st.markdown("""
         display: none !important;
     }
 
-    /* Custom Streamlit Sliders */
-    div[data-testid="stSlider"] > div > div > div > div {
-        background-color: #00E5BE !important;
+    /* Clean, High-Contrast Slider Formatting (Fixing tooltip readability) */
+    div[data-testid="stSlider"] label {
+        color: #F8FAFC !important;
+        font-weight: 600 !important;
+        font-size: 0.88rem !important;
     }
-    div[data-testid="stSlider"] [role="slider"] {
-        border: 2px solid #00E5BE !important;
-        background-color: #080D1A !important;
-        box-shadow: 0 0 10px rgba(0, 229, 190, 0.6) !important;
+    div[data-testid="stSlider"] [data-testid="stThumbValue"] {
+        color: #FFFFFF !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        font-weight: 700 !important;
+    }
+    div[data-testid="stSlider"] [data-baseweb="slider"] {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
     }
 
     /* Custom Streamlit Buttons */
@@ -494,20 +501,20 @@ data_source = st.sidebar.selectbox(
 st.sidebar.divider()
 st.sidebar.markdown("### 🧪 Sensor Telemetry Controls")
 
-with st.sidebar.expander("🧪 General Physicochemistry", expanded=True):
-    ph_input = st.slider("pH Level", 0.0, 14.0, float(st.session_state['ph']), 0.05)
-    hardness_input = st.slider("Hardness (mg/L)", 50.0, 400.0, float(st.session_state['Hardness']), 1.0)
-    conductivity_input = st.slider("Conductivity (μS/cm)", 100.0, 800.0, float(st.session_state['Conductivity']), 5.0)
-    turbidity_input = st.slider("Turbidity (NTU)", 0.0, 8.0, float(st.session_state['Turbidity']), 0.1)
+st.sidebar.markdown("#### 🧪 Physicochemical Baseline")
+ph_input = st.sidebar.slider("pH Level", 0.0, 14.0, float(st.session_state['ph']), 0.05, format="%.2f")
+hardness_input = st.sidebar.slider("Hardness (mg/L)", 50.0, 400.0, float(st.session_state['Hardness']), 1.0, format="%.0f mg/L")
+conductivity_input = st.sidebar.slider("Conductivity (μS/cm)", 100.0, 800.0, float(st.session_state['Conductivity']), 5.0, format="%.0f μS/cm")
+turbidity_input = st.sidebar.slider("Turbidity (NTU)", 0.0, 8.0, float(st.session_state['Turbidity']), 0.1, format="%.1f NTU")
 
-with st.sidebar.expander("🧂 Minerals & Dissolved Solids", expanded=True):
-    solids_input = st.slider("Total Dissolved Solids (ppm)", 100.0, 50000.0, float(st.session_state['Solids']), 250.0)
-    sulfate_input = st.slider("Sulfate Minerals (mg/L)", 100.0, 500.0, float(st.session_state['Sulfate']), 1.0)
+st.sidebar.markdown("#### 🧂 Minerals & Dissolved Solids")
+solids_input = st.sidebar.slider("Total Dissolved Solids (ppm)", 100.0, 50000.0, float(st.session_state['Solids']), 250.0, format="%.0f ppm")
+sulfate_input = st.sidebar.slider("Sulfate Minerals (mg/L)", 100.0, 500.0, float(st.session_state['Sulfate']), 1.0, format="%.0f mg/L")
 
-with st.sidebar.expander("☣️ Disinfection Residuals & Organics", expanded=True):
-    chloramines_input = st.slider("Chloramines (ppm)", 0.0, 15.0, float(st.session_state['Chloramines']), 0.1)
-    organic_carbon_input = st.slider("Total Organic Carbon (ppm)", 0.0, 30.0, float(st.session_state['Organic_carbon']), 0.1)
-    trihalomethanes_input = st.slider("Trihalomethanes (μg/L)", 0.0, 140.0, float(st.session_state['Trihalomethanes']), 1.0)
+st.sidebar.markdown("#### ☣️ Disinfectants & Organics")
+chloramines_input = st.sidebar.slider("Chloramines (ppm)", 0.0, 15.0, float(st.session_state['Chloramines']), 0.1, format="%.1f ppm")
+organic_carbon_input = st.sidebar.slider("Total Organic Carbon (ppm)", 0.0, 30.0, float(st.session_state['Organic_carbon']), 0.1, format="%.1f ppm")
+trihalomethanes_input = st.sidebar.slider("Trihalomethanes (μg/L)", 0.0, 140.0, float(st.session_state['Trihalomethanes']), 1.0, format="%.0f μg/L")
 
 # Assemble DataFrame
 current_sample_df = pd.DataFrame([{
@@ -588,69 +595,241 @@ with tab_single:
         col_left, col_right = st.columns([1.15, 1.0], gap="medium")
 
         with col_left:
-            # --- SPOTLIGHT VERDICT HUD CARD ---
-            if is_potable:
-                st.markdown(f"""
-                <div class="verdict-card-safe">
-                    <div class="verdict-header-badge-safe">
-                        ✓ WHO GUIDELINE COMPLIANT
-                    </div>
-                    <div class="verdict-title">POTABLE / SAFE DRINKING WATER</div>
-                    <div class="verdict-desc">
-                        Physicochemical sensor readings satisfy drinking water safety thresholds under the 
-                        active <b>{policy_choice.split('(')[0].strip()}</b> protocol. Cleared for distribution into municipal supply.
-                    </div>
-                    <div class="kpi-row">
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Potability Score</div>
-                            <div class="kpi-box-val" style="color: #34D399;">{prob_potable*100:.1f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Policy Bar</div>
-                            <div class="kpi-box-val">{policy_threshold*100:.0f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Safety Margin</div>
-                            <div class="kpi-box-val" style="color: #34D399;">{(prob_potable - policy_threshold)*100:+.1f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">WHO Breaches</div>
-                            <div class="kpi-box-val" style="color: #34D399;">{len(violations)}</div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div class="verdict-card-danger">
-                    <div class="verdict-header-badge-danger">
-                        ⚠ PUBLIC HEALTH HAZARD DETECTED
-                    </div>
-                    <div class="verdict-title">HAZARDOUS / CONTAMINATION ALERT</div>
-                    <div class="verdict-desc">
-                        Sample fails safety thresholds under the <b>{policy_choice.split('(')[0].strip()}</b>. 
-                        Immediate intake pipeline isolation and chemical neutralization mandated.
-                    </div>
-                    <div class="kpi-row">
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Potability Score</div>
-                            <div class="kpi-box-val" style="color: #F87171;">{prob_potable*100:.1f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Policy Bar</div>
-                            <div class="kpi-box-val">{policy_threshold*100:.0f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">Safety Deficit</div>
-                            <div class="kpi-box-val" style="color: #F87171;">{(prob_potable - policy_threshold)*100:+.1f}%</div>
-                        </div>
-                        <div class="kpi-box">
-                            <div class="kpi-box-label">WHO Breaches</div>
-                            <div class="kpi-box-val" style="color: #F87171;">{len(violations)}</div>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+            # --- REAL REACTBITS SPOTLIGHT VERDICT COMPONENT ---
+            border_color = "rgba(16, 185, 129, 0.45)" if is_potable else "rgba(239, 68, 68, 0.45)"
+            glow_shadow = "0 12px 35px -10px rgba(16, 185, 129, 0.25)" if is_potable else "0 12px 35px -10px rgba(239, 68, 68, 0.25)"
+            spotlight_color = "rgba(16, 185, 129, 0.22)" if is_potable else "rgba(239, 68, 68, 0.22)"
+            badge_bg = "rgba(16, 185, 129, 0.2)" if is_potable else "rgba(239, 68, 68, 0.2)"
+            badge_color = "#34D399" if is_potable else "#F87171"
+            badge_border = "rgba(16, 185, 129, 0.35)" if is_potable else "rgba(239, 68, 68, 0.35)"
+            badge_text = "✓ WHO GUIDELINE COMPLIANT" if is_potable else "⚠ PUBLIC HEALTH HAZARD DETECTED"
+            title_text = "POTABLE / SAFE DRINKING WATER" if is_potable else "HAZARDOUS / CONTAMINATION ALERT"
+            score_color = "#34D399" if is_potable else "#F87171"
+            policy_label = policy_choice.split('(')[0].strip()
+            advisory_text = (
+                f"Physicochemical sensor readings satisfy drinking water safety thresholds under the active <b>{policy_label}</b> protocol. Cleared for distribution into municipal supply."
+                if is_potable else
+                f"Sample fails safety thresholds under the active <b>{policy_label}</b> protocol. Immediate intake pipeline isolation and chemical neutralization mandated."
+            )
+            delta_val = (prob_potable - policy_threshold) * 100
+            delta_str = f"{delta_val:+.1f}%"
+            delta_label = "Safety Margin" if is_potable else "Safety Deficit"
+            target_pct = prob_potable * 100
+            thresh_pct = policy_threshold * 100
+            violations_n = len(violations)
+
+            react_code = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ background: transparent; font-family: 'Inter', -apple-system, sans-serif; color: #F8FAFC; overflow: hidden; }}
+  .spotlight-card {{
+    position: relative;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1.5px solid {border_color};
+    box-shadow: {glow_shadow};
+    padding: 20px 22px;
+    overflow: hidden;
+    cursor: default;
+    transition: border-color 0.25s ease;
+  }}
+  .spotlight-overlay {{
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+  }}
+  .card-content {{ position: relative; z-index: 2; }}
+  .badge-row {{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }}
+  .status-badge {{
+    display: inline-flex;
+    align-items: center;
+    background: {badge_bg};
+    color: {badge_color};
+    border: 1px solid {badge_border};
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: 'JetBrains Mono', monospace;
+  }}
+  .pulse-dot {{
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: {badge_color};
+    margin-right: 7px;
+    box-shadow: 0 0 0 0 {badge_color};
+    animation: pulse-ring 2s infinite cubic-bezier(0.66, 0, 0, 1);
+  }}
+  @keyframes pulse-ring {{
+    0% {{ box-shadow: 0 0 0 0 {badge_color}; }}
+    70% {{ box-shadow: 0 0 0 8px transparent; }}
+    100% {{ box-shadow: 0 0 0 0 transparent; }}
+  }}
+  .react-tag {{
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #00E5BE;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0, 229, 190, 0.08);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 229, 190, 0.25);
+  }}
+  .verdict-title {{
+    font-size: 1.40rem;
+    font-weight: 800;
+    color: #FFFFFF;
+    letter-spacing: -0.015em;
+    margin-bottom: 5px;
+  }}
+  .verdict-desc {{
+    font-size: 0.86rem;
+    color: #CBD5E1;
+    line-height: 1.45;
+    margin-bottom: 12px;
+  }}
+  .kpi-grid {{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }}
+  .kpi-cell {{
+    background: rgba(8, 13, 26, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 7px 10px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }}
+  .kpi-cell:hover {{
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+  }}
+  .kpi-lbl {{
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94A3B8;
+    margin-bottom: 2px;
+  }}
+  .kpi-val {{
+    font-size: 1.10rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    color: #FFFFFF;
+  }}
+</style>
+</head>
+<body>
+<div id="react-root"></div>
+<script>
+  const e = React.createElement;
+
+  function CountUp({{ to, decimals = 1, suffix = '%' }}) {{
+    const [val, setVal] = React.useState(0);
+    React.useEffect(() => {{
+      let startTime = null;
+      const duration = 900;
+      function animate(now) {{
+        if (!startTime) startTime = now;
+        const progress = Math.min((now - startTime) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        setVal((to * easeOut).toFixed(decimals));
+        if (progress < 1) {{
+          requestAnimationFrame(animate);
+        }}
+      }}
+      requestAnimationFrame(animate);
+    }}, [to]);
+    return e('span', null, val + suffix);
+  }}
+
+  function ReactBitsSpotlightVerdict() {{
+    const [pos, setPos] = React.useState({{ x: -500, y: -500 }});
+    const [opacity, setOpacity] = React.useState(0);
+    const cardRef = React.useRef(null);
+
+    const onMouseMove = (evt) => {{
+      if (!cardRef.current) return;
+      const rect = cardRef.current.getBoundingClientRect();
+      setPos({{ x: evt.clientX - rect.left, y: evt.clientY - rect.top }});
+      setOpacity(1);
+    }};
+
+    const onMouseLeave = () => {{
+      setOpacity(0);
+    }};
+
+    return e('div', {{
+      ref: cardRef,
+      onMouseMove: onMouseMove,
+      onMouseLeave: onMouseLeave,
+      className: 'spotlight-card'
+    }}, [
+      e('div', {{
+        key: 'spotlight',
+        className: 'spotlight-overlay',
+        style: {{
+          opacity: opacity,
+          background: 'radial-gradient(420px circle at ' + pos.x + 'px ' + pos.y + 'px, {spotlight_color}, transparent 65%)'
+        }}
+      }}),
+      e('div', {{ key: 'content', className: 'card-content' }}, [
+        e('div', {{ key: 'badge-row', className: 'badge-row' }}, [
+          e('div', {{ key: 'badge', className: 'status-badge' }}, [
+            e('span', {{ key: 'dot', className: 'pulse-dot' }}),
+            '{badge_text}'
+          ]),
+          e('span', {{ key: 'tag', className: 'react-tag' }}, '⚛️ ReactBits SpotlightCard')
+        ]),
+        e('h2', {{ key: 'title', className: 'verdict-title' }}, '{title_text}'),
+        e('p', {{
+          key: 'desc',
+          className: 'verdict-desc',
+          dangerouslySetInnerHTML: {{ __html: `{advisory_text}` }}
+        }}),
+        e('div', {{ key: 'kpis', className: 'kpi-grid' }}, [
+          e('div', {{ key: 'kpi1', className: 'kpi-cell' }}, [
+            e('div', {{ className: 'kpi-lbl' }}, 'Potability Score'),
+            e('div', {{ className: 'kpi-val', style: {{ color: '{score_color}' }} }}, [
+              e(CountUp, {{ to: {target_pct:.1f}, decimals: 1, suffix: '%' }})
+            ])
+          ]),
+          e('div', {{ key: 'kpi2', className: 'kpi-cell' }}, [
+            e('div', {{ className: 'kpi-lbl' }}, 'Policy Bar'),
+            e('div', {{ className: 'kpi-val' }}, '{thresh_pct:.0f}%')
+          ]),
+          e('div', {{ key: 'kpi3', className: 'kpi-cell' }}, [
+            e('div', {{ className: 'kpi-lbl' }}, '{delta_label}'),
+            e('div', {{ className: 'kpi-val', style: {{ color: '{score_color}' }} }}, '{delta_str}')
+          ]),
+          e('div', {{ key: 'kpi4', className: 'kpi-cell' }}, [
+            e('div', {{ className: 'kpi-lbl' }}, 'WHO Breaches'),
+            e('div', {{ className: 'kpi-val', style: {{ color: '{score_color}' }} }}, '{violations_n}')
+          ])
+        ])
+      ])
+    ]);
+  }}
+
+  ReactDOM.render(e(ReactBitsSpotlightVerdict), document.getElementById('react-root'));
+</script>
+</body>
+</html>"""
+            components.html(react_code, height=245, scrolling=False)
 
             # --- CHEMICAL CULPRIT DIAGNOSTIC PANEL ---
             if violations:
