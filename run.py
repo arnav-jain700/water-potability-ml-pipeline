@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-AquaGuard ML - Production Water Potability Triage Engine
-FastAPI Backend & React SPA Launcher (Method 1 Architecture)
+AquaGuard ML - Application Launcher
+Launches the FastAPI backend and serves the React dashboard single-page application.
 """
 import sys
 import uvicorn

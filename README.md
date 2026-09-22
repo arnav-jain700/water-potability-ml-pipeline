@@ -1,19 +1,20 @@
 # 🌊 Water Potability ML Pipeline: End-to-End Classification & Preprocessing Engine
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC.svg?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF.svg?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E.svg?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![XGBoost](https://img.shields.io/badge/XGBoost-EB5424.svg)](https://xgboost.readthedocs.io/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B.svg?logo=Streamlit&logoColor=white)](https://streamlit.io/)
-[![Plotly](https://img.shields.io/badge/Plotly-3F4F75.svg?logo=Plotly&logoColor=white)](https://plotly.com/)
 [![CI/CD Pipeline](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/arnav-jain700/water-potability-ml-pipeline/actions)
-[![Live Demo](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://aquaguard-water-potability.streamlit.app/)
-[![Status](https://img.shields.io/badge/Project_Status-Phases_1--6_Complete-brightgreen.svg)]()
+[![Status](https://img.shields.io/badge/Project_Status-Production_Ready-brightgreen.svg)]()
 
 > **Academic Project:** CSD 302 — Machine Learning I Capstone Project  
 > **Course Track:** Problem Statement 30 — *[Capstone / Integration] Data-Cleaning, Preprocessing Pipeline, Model Comparison & Ethical Evaluation*  
 > **Domain:** Environmental Engineering, Public Health & Sensor Telemetry  
 > **Author:** Arnav Jain ([@arnav-jain700](https://github.com/arnav-jain700))  
-> 🌐 **Live Web Application:** [aquaguard-water-potability.streamlit.app](https://aquaguard-water-potability.streamlit.app/)
+> 🌐 **Full-Stack Application:** FastAPI REST Backend + React 18 / Tailwind CSS SPA  
 
 ---
 
@@ -179,10 +180,33 @@ To simulate realistic municipal surveillance, the system combines **7,776 observ
 water-potability-ml-pipeline/
 │
 ├── .github/workflows/
-│   └── ci.yml                         # Automated GitHub Actions CI/CD test workflow
+│   └── ci.yml                         # Automated CI/CD (Node build + pytest suite)
 │
-├── .streamlit/
-│   └── config.toml                    # High-contrast UI theme & server configuration
+├── api/
+│   ├── __init__.py                    # API package initialization
+│   └── main.py                        # High-performance FastAPI REST server & SPA host
+│
+├── frontend/                          # Modern React 18 + Tailwind CSS Dashboard (Method 1)
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ArchitectureTab.jsx    # Pipeline workflow diagram & CV leaderboard
+│   │   │   ├── AuroraHero.jsx         # Mesh gradient header & live telemetry pill
+│   │   │   ├── BatchProcessing.jsx    # CSV batch upload, SVG donut & scatter plot
+│   │   │   ├── CountUp.jsx            # Smooth easing counter animation
+│   │   │   ├── CulpritDiagnostics.jsx # Spotlight breach cards & audit table
+│   │   │   ├── PotabilityGauge.jsx    # Semi-circular SVG speedometer confidence dial
+│   │   │   ├── ScenarioPresets.jsx    # 1-click simulation buttons
+│   │   │   ├── SpotlightCard.jsx      # ReactBits cursor-following spotlight glow
+│   │   │   ├── SpotlightVerdictCard.jsx # Dynamic safety verdict & 4-KPI readout
+│   │   │   ├── TelemetryControls.jsx  # Sensory sliders with WHO limit guides
+│   │   │   └── WHORadarChart.jsx      # 9-point interactive WHO spider chart
+│   │   ├── App.jsx                    # Root state management & layout
+│   │   ├── main.jsx                   # React DOM entry point
+│   │   └── index.css                  # Tailwind directives & Aurora keyframes
+│   ├── dist/                          # Compiled production SPA assets
+│   ├── package.json                   # Frontend dependencies
+│   ├── tailwind.config.js             # High-contrast color palette & animations
+│   └── vite.config.js                 # Vite bundler & API dev proxy configuration
 │
 ├── dataset/
 │   ├── water_potability.csv           # Original Source A benchmark survey (3,276 rows)
@@ -193,13 +217,15 @@ water-potability-ml-pipeline/
 │   └── water_potability_pipeline.joblib# Serialized atomic production pipeline
 │
 ├── tests/
-│   └── test_pipeline.py               # Automated pytest suite (bounds, data, threshold)
+│   ├── test_api.py                    # Automated FastAPI REST & static SPA tests
+│   └── test_pipeline.py               # ML pipeline unit tests (bounds, data, threshold)
 │
 ├── files/
 │   └── water_potability_capstone.ipynb# Fully documented, interactive Jupyter Notebook
 │
-├── app.py                             # Interactive Streamlit Web Application
-├── .gitignore                         # Excludes course PDF, checkpoints, and cache
+├── run.py                             # Single-command launcher (FastAPI + React SPA)
+├── app.py                             # Application entrypoint wrapper
+├── .gitignore                         # Excludes node_modules, cache, and checkpoints
 ├── README.md                          # Comprehensive project documentation & report
 └── requirements.txt                   # Reproducible Python dependencies
 ```
@@ -210,6 +236,7 @@ water-potability-ml-pipeline/
 
 ### Prerequisites
 * Python 3.10+
+* Node.js 18+ (optional, required only for rebuilding the frontend bundle)
 * Git
 
 ### Installation
@@ -228,39 +255,43 @@ water-potability-ml-pipeline/
    source venv/bin/activate
    ```
 
-3. **Install dependencies:**
+3. **Install Python dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Launch the Interactive Streamlit Web Dashboard:**
+4. **Launch the Production Full-Stack Application (FastAPI + React):**
    ```bash
-   streamlit run app.py
+   python run.py
    ```
+   * Open your browser at **`http://localhost:8000`** to access the live dashboard.
+   * Interactive Swagger REST API documentation is available at **`http://localhost:8000/docs`**.
 
 5. **Run Automated Unit Tests (pytest):**
    ```bash
-   pytest -v tests/
+   python -m pytest -v tests/
    ```
 
-6. **Launch the Jupyter Notebook:**
+6. **Frontend Development Mode (Optional):**
    ```bash
-   jupyter notebook files/water_potability_capstone.ipynb
+   cd frontend
+   npm install
+   npm run dev
    ```
+   * Access hot-reloading UI development at `http://localhost:5173`.
 
 ---
 
-## 🌐 9. Interactive Web Application & Visual Analytics (Streamlit + Plotly)
+## 🌐 9. Interactive Web Application & Visual Analytics (FastAPI + React 18 + Tailwind)
 
-> 🚀 **Live Production Deployment**: [aquaguard-water-potability.streamlit.app](https://aquaguard-water-potability.streamlit.app/)
+The web dashboard is built using a modern decoupled architecture featuring a high-performance **FastAPI** asynchronous REST backend and a **React 18 + Tailwind CSS** frontend styled with **ReactBits** glassmorphism and interactive SVG visualizations:
 
-The project includes an interactive web dashboard (`app.py`) built with **Streamlit** and **Plotly** for real-time municipal triage:
-
-* **🧭 Plotly Potability Confidence Gauge (Speedometer)**: Curved semi-circular dial displaying potability confidence with delta indicators, color-coded hazard zones ($0-50\%$ Red, $50-65\%$ Amber, $65-100\%$ Emerald), and a dynamic threshold needle.
-* **🕸️ Chemical Fingerprint Radar / Spider Chart**: Multidimensional radar plot comparing all 9 chemical features against the **green WHO Safe Benchmark Envelope**; parameter breaches visibly pierce outside the safe boundary into the red alert zone.
-* **📋 Physicochemical Regulatory Audit**: Live tabular breakdown auditing each parameter against WHO/EPA guidelines (`min`, `max`, `unit`, and compliance verdict).
-* **📁 Batch Telemetry Ingestion & Scoring**: Drag-and-drop CSV upload for multi-sample scoring with cohort donut charts, 2D scatter plots (pH vs. Sulfate), and one-click scored CSV export.
-* **🎨 High-Contrast Theming (`.streamlit/config.toml`)**: Clean-tech theme with deep slate text (`#0F172A`) and explicit background contrast to ensure readability across all browsers.
+* **🧭 SVG Potability Speedometer Gauge**: High-contrast semi-circular dial displaying real-time potability confidence with color-coded safety zones ($0-50\%$ Red, $50-65\%$ Amber, $65-100\%$ Emerald) and a red threshold marker indicator at $\tau^* = 0.65$.
+* **🕸️ 9-Point WHO Fingerprint Radar Chart**: Interactive spider polygon chart mapping all 9 biochemical telemetry parameters against the green WHO Safe Limit Envelope ($100\%$ baseline). Breaching chemicals visibly protrude into the red hazard perimeter with interactive vertex hover inspection.
+* **✨ ReactBits Spotlight Verdict Card**: Cursor-tracking glassmorphic verdict card with smooth easing `CountUp` probability animations, live health advisory text, and 4 KPI cells (*Potability Score, Policy Bar, Safety Margin, WHO Guideline Breaches*).
+* **🚨 Chemical Culprit Diagnostic Panels**: Highlights specific exceeding contaminants (*e.g., pH outside 6.5–8.5, Solids > 1,000 ppm, Chloramines > 4.0 ppm*) with actionable regulatory alerts and a full tabular audit.
+* **📁 High-Throughput Batch Ingestion**: Drag-and-drop CSV ingestion scoring hundreds of water samples simultaneously, complete with batch safety donut breakdown, cluster distribution scatter plot (pH vs. Sulfate), and one-click scored CSV download.
+* **⚡ 1-Click Scenario Simulation**: Instant presets for *Pristine Municipal Tap*, *Toxic Industrial Spill*, and *Borderline Agricultural Runoff*.
 
 ---
 
