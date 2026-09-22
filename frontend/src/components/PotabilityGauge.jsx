@@ -7,9 +7,10 @@ export default function PotabilityGauge({ probability, threshold }) {
   const isSafe = probPct >= threshPct;
 
   // Arc geometry: 180 degrees from -180 to 0 (left to right)
-  // angle = -180 + (pct / 100) * 180
-  const needleAngle = -180 + (probPct / 100) * 180;
-  const threshAngle = -180 + (threshPct / 100) * 180;
+  // When unrotated (0 deg), the pointer needle points straight UP (12 o'clock = 50%).
+  // Left (0%) is at -90 deg rotation, Right (100%) is at +90 deg rotation.
+  // Formula: needleAngle = -90 + (probPct / 100) * 180
+  const needleAngle = -90 + (probPct / 100) * 180;
 
   // Function to calculate SVG arc path
   const polarToCartesian = (centerX, centerY, radius, angleInDegrees) => {
@@ -36,11 +37,15 @@ export default function PotabilityGauge({ probability, threshold }) {
   const r = 100;
   const strokeW = 16;
 
+  // Polar angle for threshold line: -180 is left (0%), -90 is top (50%), 0 is right (100%)
+  const safeThreshPct = Math.max(50, Math.min(threshPct, 95));
+  const threshAngle = -180 + (threshPct / 100) * 180;
+  const yellowEndAngle = -180 + (safeThreshPct / 100) * 180;
+
   // Segment arcs
-  const redArc = describeArc(cx, cy, r, -180, -90); // 0 to 50%
-  const yellowEndAngle = -180 + (threshPct / 100) * 180;
-  const yellowArc = describeArc(cx, cy, r, -90, yellowEndAngle); // 50% to threshold
-  const greenArc = describeArc(cx, cy, r, yellowEndAngle, 0); // threshold to 100%
+  const redArc = describeArc(cx, cy, r, -180, -90); // 0% to 50%
+  const yellowArc = describeArc(cx, cy, r, -90, yellowEndAngle); // 50% to Threshold%
+  const greenArc = describeArc(cx, cy, r, yellowEndAngle, 0); // Threshold% to 100%
 
   // Threshold needle line coordinates
   const threshInner = polarToCartesian(cx, cy, r - strokeW - 4, threshAngle);
@@ -95,12 +100,12 @@ export default function PotabilityGauge({ probability, threshold }) {
             strokeWidth={strokeW}
           />
 
-          {/* Ticks & Labels */}
+          {/* Scale Marks & Ticks */}
           <text x="35" y="152" fill="#94A3B8" fontSize="10" fontFamily="JetBrains Mono" textAnchor="middle">0%</text>
           <text x="150" y="24" fill="#94A3B8" fontSize="10" fontFamily="JetBrains Mono" textAnchor="middle">50%</text>
           <text x="265" y="152" fill="#94A3B8" fontSize="10" fontFamily="JetBrains Mono" textAnchor="middle">100%</text>
 
-          {/* Threshold Red Needle Marker */}
+          {/* Static Threshold Red Marker Line on Arc */}
           <line
             x1={threshInner.x}
             y1={threshInner.y}
@@ -111,8 +116,9 @@ export default function PotabilityGauge({ probability, threshold }) {
             strokeLinecap="round"
           />
 
-          {/* Center Pointer Needle */}
+          {/* Center Moving Pointer Needle (Rotates from -90deg at 0% to +90deg at 100%) */}
           <g
+            transform={`rotate(${needleAngle} ${cx} ${cy})`}
             style={{
               transform: `rotate(${needleAngle}deg)`,
               transformOrigin: `${cx}px ${cy}px`,
@@ -120,11 +126,11 @@ export default function PotabilityGauge({ probability, threshold }) {
             }}
           >
             <polygon
-              points={`${cx - 3},${cy} ${cx + 3},${cy} ${cx},${cy - r + 8}`}
+              points={`${cx - 3.5},${cy} ${cx + 3.5},${cy} ${cx},${cy - r + 8}`}
               fill={isSafe ? '#00E5BE' : '#EF4444'}
             />
-            <circle cx={cx} cy={cy} r="6" fill="#FFFFFF" />
-            <circle cx={cx} cy={cy} r="3" fill="#090D16" />
+            <circle cx={cx} cy={cy} r="6.5" fill="#FFFFFF" />
+            <circle cx={cx} cy={cy} r="3.5" fill="#090D16" />
           </g>
         </svg>
 
@@ -136,7 +142,7 @@ export default function PotabilityGauge({ probability, threshold }) {
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 font-mono">
-            Safety Bar: <span className="text-rose-400 font-bold">{threshPct.toFixed(0)}%</span> (Red indicator)
+            Safety Bar: <span className="text-rose-400 font-bold">{threshPct.toFixed(0)}%</span> (Red line on arc)
           </p>
         </div>
       </div>
