@@ -47,6 +47,57 @@ export default function BatchProcessing({ threshold }) {
     }
   };
 
+  const loadDemoBatch = () => {
+    // Generate realistic demo batch distribution
+    const demoPoints = [];
+    const demoRows = [];
+    for (let i = 0; i < 40; i++) {
+      const isSafe = i % 3 !== 0;
+      const ph = isSafe ? (6.8 + (i % 7) * 0.2) : (4.0 + (i % 5) * 0.4);
+      const sulfate = isSafe ? (280 + (i % 6) * 15) : (420 + (i % 8) * 10);
+      const prob = isSafe ? 0.72 + (i % 5) * 0.04 : 0.28 + (i % 4) * 0.05;
+      demoPoints.push({
+        ph: Math.round(ph * 100) / 100,
+        Sulfate: Math.round(sulfate),
+        Solids: isSafe ? 18000 + i * 200 : 42000 + i * 500,
+        Chloramines: isSafe ? 6.5 + (i % 4) * 0.3 : 11.2 + (i % 3) * 0.4,
+        probability: Math.round(prob * 1000) / 1000,
+        verdict: isSafe ? 'Potable / Safe' : 'Toxic / Unsafe',
+        is_potable: isSafe
+      });
+      demoRows.push({
+        Is_Potable: isSafe,
+        Triage_Verdict: isSafe ? 'Potable / Safe' : 'Toxic / Unsafe',
+        Confidence_Pct: (prob * 100).toFixed(1),
+        ph: ph.toFixed(2),
+        Hardness: (180 + i * 2).toFixed(0),
+        Solids: (isSafe ? 18000 + i * 200 : 42000 + i * 500).toFixed(0),
+        Chloramines: (isSafe ? 6.5 : 11.2).toFixed(1),
+        Sulfate: sulfate.toFixed(0),
+        Conductivity: (400 + i * 5).toFixed(0),
+        Organic_carbon: (isSafe ? 11.0 : 24.0).toFixed(1),
+        Trihalomethanes: (isSafe ? 55 : 115).toFixed(0),
+        Turbidity: (isSafe ? 3.2 : 6.4).toFixed(1)
+      });
+    }
+
+    const safeCount = demoPoints.filter(p => p.is_potable).length;
+    const toxicCount = demoPoints.length - safeCount;
+    setResults({
+      summary: {
+        total_samples: demoPoints.length,
+        safe_count: safeCount,
+        toxic_count: toxicCount,
+        safe_percentage: Math.round((safeCount / demoPoints.length) * 100),
+        toxic_percentage: Math.round((toxicCount / demoPoints.length) * 100),
+        threshold_applied: threshold
+      },
+      scatter_points: demoPoints,
+      preview_rows: demoRows,
+      csv_data: "ph,Sulfate,Solids,Triage_Verdict\n" + demoPoints.map(p => `${p.ph},${p.Sulfate},${p.Solids},${p.verdict}`).join("\n")
+    });
+  };
+
   const downloadCSV = () => {
     if (!results || !results.csv_data) return;
     const blob = new Blob([results.csv_data], { type: 'text/csv' });
@@ -82,13 +133,21 @@ export default function BatchProcessing({ threshold }) {
               Upload municipal sensor telemetry CSV files to score hundreds of water sources simultaneously.
             </p>
           </div>
-          <a
-            href="/api/batch-template"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 hover:border-teal-400 text-xs font-mono text-teal-300 transition-colors shrink-0"
-          >
-            <FileText className="w-4 h-4" />
-            Download CSV Template
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={loadDemoBatch}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-teal-500/20 border border-teal-500/40 hover:bg-teal-500/30 text-xs font-mono text-teal-300 transition-colors shrink-0 font-bold"
+            >
+              ⚡ Load Demo Batch (Charts)
+            </button>
+            <a
+              href="/api/batch-template"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950 border border-white/10 hover:border-teal-400 text-xs font-mono text-teal-300 transition-colors shrink-0"
+            >
+              <FileText className="w-4 h-4" />
+              Download Template
+            </a>
+          </div>
         </div>
 
         <div
