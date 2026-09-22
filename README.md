@@ -107,7 +107,7 @@ To simulate realistic municipal surveillance, the system combines **7,776 observ
 │ [x] Phase 3: Preprocessing Pipeline (StandardScaler, One-Hot Encoding, Stratified Split)│
 │ [x] Phase 4: Model Exploration, Baseline vs. Tree Ensembles & Hyperparameter Tuning    │
 │ [x] Phase 5: Honest Held-Out Evaluation & Asymmetric Cost-Sensitive Threshold Tuning   │
-│ [x] Phase 6: Global Feature Attribution, Grounded Ethics Audit & Viva Preparation      │
+│ [x] Phase 6: Global Feature Attribution, Grounded Ethics Audit & Model Interpretation   │
 └────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -269,25 +269,6 @@ The project includes an interactive web dashboard (`app.py`) built with **Stream
 * **Environmental Justice & Infrastructure Bias:** Aging municipal infrastructure disproportionately affects lower-income and marginalized communities (e.g., Flint, Michigan crisis). Our dataset tracks station types to audit for disparate impact across urban vs. rural catchments.
 * **Sensor Quality Drift:** Industrial runoff monitoring stations often experience rapid sensor degradation, risking elevated false-negative rates if not regularly calibrated.
 * **Accountability Mandate:** In public water safety, black-box predictions must be accompanied by explainable feature attributions so municipal operators can understand *why* water is flagged unsafe.
-
----
-
-## 🎓 11. Viva Defense Master Q&A (Top 5 Questions & Answers)
-
-1. **Q: Why did you use Tukey's IQR method instead of standard Z-scores for outlier detection?**  
-   *A:* Z-score outlier detection assumes a symmetric, Gaussian distribution ($\mu \pm 3\sigma$). In our dataset, `Solids` exhibited heavy positive skewness ($+1.390$), which distorts the sample mean and standard deviation. Tukey's IQR fences rely on rank-ordered percentiles ($Q_1, Q_3$) which are inherently robust to extreme values.
-
-2. **Q: Why did you cap (Winsorize) outliers instead of dropping them?**  
-   *A:* Dropping outlier rows across 9 physical parameters would discard $\approx 18\%$ of the dataset. Winsorization using `.clip()` reins in extreme leverage while retaining 100% of our sample size.
-
-3. **Q: Why did KNN Imputation beat Median Imputation in your distribution audit?**  
-   *A:* Median imputation replaces missing entries with a single constant value, creating an artificial, unnatural spike at the center of the distribution. KNN Imputation ($k=5$) leverages multi-dimensional Euclidean distance from complete chemical parameters, preserving multivariate correlations and natural probability curves.
-
-4. **Q: Why did Random Forest outperform Logistic Regression so significantly?**  
-   *A:* Water potability is governed by bounded physical intervals (e.g., pH must be within $6.5 - 8.5$). A linear model tries to separate classes with a single linear hyperplane, which cannot isolate bounded intervals without manual polynomial features. Decision trees naturally carve orthogonal safe windows using sequential splits.
-
-5. **Q: Why did you shift the classification threshold from 0.50 to 0.65?**  
-   *A:* Classification errors carry asymmetric consequences. A False Negative (declaring contaminated water safe) causes disease outbreaks, while a False Positive merely prompts a lab retest. By setting $\tau^* \approx 0.65$, we demand higher confidence before declaring water potable, eliminating over $60\%$ of dangerous false-potable events.
 
 ---
 
